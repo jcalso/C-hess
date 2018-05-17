@@ -5,24 +5,36 @@
 #include <unordered_map>
 #include <utility>
 #include <functional>
+#include <stack>
 using namespace std;
 
-//TO DO 
-//move checking
-//castling
-//Check/checkmate
-//pawn promotion
-//en passant
-//50 move draw
-//3 fold repetition draw
+class UndoEntity{
+	public:
+	int prev_row, prev_col;
+	int curr_row, curr_col;
+	string prev_char;
 
+	
+	void set_values(int prev_row_in, int prev_col_in, int curr_row_in, int curr_col_in, string prev_char_in){
+		prev_row = prev_row_in;		
+		prev_col = prev_col_in;   //where the piece came from
+		
+		prev_char = prev_char_in; //character that was deleted due to piece movement
+		
+		curr_col = curr_col_in;
+		curr_row = curr_row_in;
+	}
+};
 class ChessBoard{
 	public:
-	
+		int move_count = 0;
+		
 	vector<vector<string>> Board;
 	
-	unordered_map<string, int>coords;
-
+	unordered_map<string, int>coords; //handles matrix column coordinate conversion, letter -> number
+	
+	stack<UndoEntity>Undo; 
+	
 	
 	void init(){
 			Board.resize(18);
@@ -41,13 +53,13 @@ class ChessBoard{
 
 		
 			for (int j = 0; j < Board.size(); j++){
-				if(Board[i][j-1]== "|" && j != 17){
+				if(Board[i][j-1]== "|" && j != 17){ //set spaces between borders
 					Board[i][j] = "   ";
 				}
 				else if(i%2 == 0 && j%2 == 1 && j!= 17){ //Set horizontal border
 					Board[i][j] = "---";
 				}
-				else if(i%2 == 1 && j%2 == 0 && i != 17){
+				else if(i%2 == 1 && j%2 == 0 && i != 17){//set vertical borders
 					Board[i][j] = "|";
 				}
 				
@@ -55,7 +67,7 @@ class ChessBoard{
 				else if(j == 17 && i%2 == 1 && i != 17){ //set number coordinates
 					Board[i][j] = space+to_string(9-(i+1)/2);
 				}
-			  else if(i == 17 && j%2 == 1 && j != 17){
+			  else if(i == 17 && j%2 == 1 && j != 17){//set letter coordinates
 			  	Board[i][j] =  space + letter_coords[(j+1)/2-1] + space;
 			  }
 		
@@ -112,48 +124,38 @@ class ChessBoard{
 		}
 	}
 	
-	
-	
-	
-	void move_piece(string initial_row_in, string initial_col_in, string final_row_in, string final_col_in, int move_count){
-		int row_i, col_i, row_f, col_f;
-		if(move_count %2 == 0){
-			row_i = (8- stoi(initial_row_in))*2 +1;
-			
-			row_f= (8-stoi(final_row_in))*2 +1;
+	int convert_to_matrix_col(string board_row){ //handles coordinate conversion with numbers(rows)
+		if(move_count%2 == 0){
+			return (8-stoi(board_row))*2+1;
 		}
 		else{
-			row_i = (stoi(initial_row_in))*2;
-			
-			row_f= (stoi(final_row_in))*2;
+			return stoi(board_row)*2;
 		}
+	}
+	
+	void move_piece(string initial_row_in, string initial_col_in, string final_row_in, string final_col_in){
+		int row_i, col_i, row_f, col_f;
+		
+			row_i = convert_to_matrix_col(initial_row_in);
+			row_f= convert_to_matrix_col(final_row_in);
+			
 			col_f = coords[final_col_in];
 			col_i = coords[initial_col_in];
 		
-		cout << row_f << col_f;
+
+	UndoEntity newUndo;
+	newUndo.set_values(row_i, col_i,row_f, col_f, Board[row_f][col_f]);
+	Undo.push(newUndo);
 	
 		Board[row_f][col_f] = Board[row_i][col_i];
 		Board[row_i][col_i] = "   ";
-		
 	}
 	
-	bool is_pawn(string p){
-		return (p == "P" || p == "p");
-	}
-	bool is_knight(string p){
-		return (p == "N" || p == "n");
-	}
-	bool is_bishop(string p){
-		return (p == "b" || p == "B");
-	}
-	bool is_queen(string p){
-		return (p == "q" || p == "Q");
-	}
-	bool is_king(string p){
-		return (p == "k" || p == "K");
-	}
-	bool is_rook(string p){
-		return (p == "r" || p == "R");
+	void undo_move(){
+		Board[Undo.top().prev_row][Undo.top().prev_col] = Board[Undo.top().curr_row][Undo.top().curr_col];
+		Board[Undo.top().curr_row][Undo.top().curr_col] = Undo.top().prev_char;
+		Undo.pop();
+		move_count--;
 	}
 	
 	
@@ -170,7 +172,7 @@ void print_start_message(){
 		cout << "->";
 		cin >> command;
 		if (command == "help"){
-			cout << "Enter two sets of coordinates to move a piece, enter 'resign' in the first prompt to resign, otherwise you must make a move" << endl;
+			cout << "Your options at the beginning of each turn are 'move', 'undo', or 'resign'.\n To move, Enter two sets of coordinates to move a piece." << endl;
 			cout << "Lowercase letters are black pieces, Uppercase letters are white" << endl;
 			cout << "p - pawn, r - rook, n - knight, b - bishop, q - queen, k - king"<<endl;
 			cout << "The board coordinate system uses letters for files(columns), and numbers for ranks(rows)." << endl;
@@ -193,7 +195,9 @@ int main (){
 	bool checkmate = false;
 	bool white_can_castle =true;
 	bool black_can_castle = true;
-	int move_count = 0;
+	string command;
+	
+	
 	print_start_message();
 	b.init();
 	b.insert_pieces(); 
@@ -202,32 +206,54 @@ int main (){
 	while(!checkmate){
 		b.print();
 	
-		if(move_count %2 == 0){
-			cout << "White to move" << endl;
+	
+		if(b.move_count %2 == 0){
+			cout << "Move " << b.move_count + 1 << " - White to play" <<endl;
 		}
 		else {
-			cout << "Black to move" << endl;
-			
+			cout << "Move " << b.move_count + 1 << " - Black to play" << endl;
 		}
-		cout << "Move piece at column: ";
+	
+		
+	
+		cout << "Piece at column: ";
 			string initial_row, initial_col, final_row, final_col;
 			cin >> initial_col;
-			cout << "and row: ";
-			cin >> initial_row;
-			cout <<"to column: ";
-			cin >> final_col;
-			cout << "and row: ";
-			cin >> final_row;
+			if(initial_col == "undo"){
+				if(b.move_count == 0){
+					cout << "Error: cannot undo any further";
+					continue;
+				}
+				else{
+					b.flip_board();
+					b.undo_move();
+				}
+			}
+			else if(initial_col == "resign"){
+				if(b.move_count%2 == 0){
+					cout << "White has resigned, Black wins";
+				}
+				else{
+					cout << "Black has resigned, White wins";
 			
+				}
+				exit(0);
+			}
+			else{
+				cout << "and row: ";
+				cin >> initial_row;
+				cout <<"to column: ";
+				cin >> final_col;
+				cout << "and row: ";
+				cin >> final_row;
+				
+				b.move_piece(initial_row, initial_col,final_row, final_col);
 			
-		b.move_piece(initial_row, initial_col,final_row, final_col, move_count);
-		
-			b.flip_board();
-			move_count++;
-	}
+				b.flip_board();
+				b.move_count++;
+		}
 
-	
-	
+	}
 
 	return 0;
 }
