@@ -19,6 +19,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
 //NOTE: Program compiles in online compiler repl.it, have not tested/debugged in other IDE's yet
+/* TO Do 
+	Debug
+	Split into header files
+	Include a makefile for VS compiling
+*/
 
 #include <iostream>
 #include <cmath>
