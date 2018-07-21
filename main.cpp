@@ -80,7 +80,7 @@ class ChessBoard{
 
 		
 			for (int j = 0; j < Board.size(); j++){
-				if(Board[i][j-1]== "|" && j != 17){ //set spaces between borders
+				if(j != 0 && Board[i][j-1]== "|" && j != 17){ //set spaces between borders
 					Board[i][j] = "   ";
 				}
 				else if(i%2 == 0 && j%2 == 1 && j!= 17){ //Set horizontal border
