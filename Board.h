@@ -4,12 +4,12 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include <string>
 #include <unordered_map>
+#include <stack>
+#include <string>
 #include <utility>
 #include <functional>
-#include <stack>
-#include "UndoEntity.h"
+#include "Move.h"
 
 using namespace std;
 
@@ -31,7 +31,7 @@ public:
 
 	unordered_map<string, int>coords; //handles matrix column coordinate conversion, letter -> number
 
-	stack<UndoEntity>Undo;
+	stack<Move>Undo;
 
 
 	void init() {
@@ -39,7 +39,7 @@ public:
 		string space = " ";
 		string letter_coords = "abcdefgh";
 
-		for (unsigned int i = 0; i < letter_coords.size(); i++) {//PGN to Matrix coordinate conversion
+		for (unsigned int i = 0; i < letter_coords.size(); i++) { //PGN to Matrix coordinate conversion
 			coords.insert(make_pair(letter_coords.substr(i, 1), i * 2 + 1));
 		}
 
@@ -143,7 +143,7 @@ public:
 		}
 	}
 
-	void move_piece(string initial_pos, string final_pos) {
+	Move create_move(string initial_pos, string final_pos) {
 		int row_i, col_i, row_f, col_f;
 
 		row_i = convert_to_matrix_col(initial_pos.substr(1, 1));
@@ -153,37 +153,33 @@ public:
 			col_i = coords[initial_pos.substr(0, 1)];
 		}
 		else {
-			col_f = 8 - (abs(8 - coords[final_pos.substr(0, 1)]));  //SOMETHING IS VERY WRONG HERE
-			col_i = 8 - (abs(8 - coords[initial_pos.substr(0, 1)]));
+			col_f = 16 - (coords[final_pos.substr(0, 1)]);  //SOMETHING IS VERY WRONG HERE
+			col_i = 16 - (coords[initial_pos.substr(0, 1)]);
 		}
 
-		if (can_move_here(row_f, col_f, row_i, col_i)) {
+		//update undo data stack
+		Move newUndo;
+		newUndo.set_values(row_i, col_i, row_f, col_f, Board[row_f][col_f]);
+		return newUndo;
+	}
+	void move_piece(string initial_pos, string final_pos) {
 
-			//update undo data stack
-			UndoEntity newUndo;
-			newUndo.set_values(row_i, col_i, row_f, col_f, Board[row_f][col_f]);
-			Undo.push(newUndo);
-
-			//if a piece wasn't taken, increment 50 move draw count
-			if (Board[row_f][col_f] != "   ") {
-				draw_move_count++;
-			}
-			else {
-				draw_move_count = 0;
-			}
-
-			//move the target piece
-			Board[row_f][col_f] = Board[row_i][col_i];
-			Board[row_i][col_i] = "   ";
-
-			flip_board();
-			move_count++;
-
+		Move move = create_move(initial_pos, final_pos);
+		Undo.push(move);
+		//if a piece wasn't taken, increment 50 move draw count
+		if (Board[move.curr_row][move.curr_col] == "   ") {
+			draw_move_count++;
 		}
-
 		else {
-			cout << "Error: piece cannot move here" << endl;
+			draw_move_count = 0;
 		}
+
+		//move the target piece
+		Board[move.curr_row][move.curr_col] = Board[move.prev_row][move.prev_col];
+		Board[move.prev_row][move.prev_col] = "   ";
+
+		flip_board();
+		move_count++;
 
 	}
 
