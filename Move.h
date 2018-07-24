@@ -1,5 +1,5 @@
-#ifndef UNDOENTITY_H
-#define UNDOENTITY_H
+#ifndef MOVE_H
+#define MOVE_H
 
 #include <iostream>
 #include <cmath>
@@ -13,7 +13,7 @@
 
 using namespace std;
 
-class UndoEntity {
+class Move {
 public:
 	int prev_row, prev_col;
 	int curr_row, curr_col;
