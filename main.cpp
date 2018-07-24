@@ -18,13 +18,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
-//NOTE: Program compiles in online compiler repl.it, have not tested/debugged in other IDE's yet
-/* TO Do 
-	Debug
-	Split into header files
-	Include a makefile for VS compiling
-*/
-
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -36,28 +29,27 @@ SOFTWARE.*/
 #include "Board.h"
 using namespace std;
 
-//TO DO 
-//move checking
-//castling
-//Check/checkmate
-//pawn promotion
-//en passant
-//3 fold repetition draw
+
 
 void print_start_message() {
 
-	cout << "Welcome to C++hess, type 'start' to begin a game, type 'help' for instructions, type 'quit' to quit." << endl;
+	cout << "Welcome to C++hess, type 'start' to begin a game, type 'help' for instructions, type 'quit' to quit." << endl << "->";
 
 	string command;
+	cin >> command;
 
 	while (command != "start") {
-		cout << "->";
-		cin >> command;
 		if (command == "help") {
-			cout << "Your options at the beginning of each turn are 'move', 'undo', or 'resign'.\n To move, Enter two sets of coordinates to move a piece." << endl;
+			cout << endl;
 			cout << "Lowercase letters are black pieces, Uppercase letters are white" << endl;
 			cout << "p - pawn, r - rook, n - knight, b - bishop, q - queen, k - king" << endl;
 			cout << "The board coordinate system uses letters for files(columns), and numbers for ranks(rows)." << endl;
+			cout << "Your options at the beginning of each turn are move, undo, or resign" << endl;
+			cout << "To move, Enter two sets of coordinates to move a piece." << endl;
+			cout << "For example, move piece at e2 to e4" << endl;
+			cout << "To undo a move type 'undo' in the first prompt" << endl;
+			cout << "To resign, type 'resign' in the first prompt" << endl << endl;
+
 		}
 		else if (command == "quit") {
 			exit(0);
@@ -67,7 +59,10 @@ void print_start_message() {
 		}
 		else {
 			cout << endl << "Error: Invalid command" << endl;
+
 		}
+		cout << "Type 'start' to begin a game, type 'help' for instructions, type 'quit' to quit." << endl << "->";
+		cin >> command;
 	}
 
 }
@@ -89,29 +84,28 @@ bool pos_is_valid(string coord) {
 int main() {
 
 	ChessBoard b;
-	bool checkmate = false;
 	string command;
 
 	print_start_message();
 	b.init();
 	b.insert_pieces();
 
-	while (!checkmate || b.draw_move_count == 50) {
+	while (b.draw_move_count != 50) {
 
 		b.print();
 
 		if (b.move_count % 2 == 0) {
-			cout << "Move " << b.move_count + 1 << " - White to play" << endl;
+			cout << "Move " << (b.move_count + 2)/2 << " - White to play" << endl;
 		}
 		else {
-			cout << "Move " << b.move_count + 1 << " - Black to play" << endl;
+			cout << "Move " << (b.move_count + 2)/2 << " - Black to play" << endl;
 		}
 
-		cout << "Move piece at:";
+		cout << "Move piece at: ";
 		string initial_pos, final_pos;
 		cin >> initial_pos;
 		if (initial_pos == "undo") {
-			if (b.move_count == 0) {
+			if (b.move_count == 0 && b.Undo.empty()) {
 				cout << endl << "Error: cannot undo any further";
 				continue;
 			}
@@ -149,6 +143,4 @@ int main() {
 	}
 	return 0;
 }
-
-
 
