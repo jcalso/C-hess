@@ -18,23 +18,12 @@ public:
 
 	int move_count = 0;
 	int draw_move_count = 0;
-	bool black_in_check = false;
-	bool white_in_check = false;
-
-	bool white_can_castle_QS = true;
-	bool white_can_castle_KS = true;
-	bool black_can_castle_QS = true;
-	bool black_can_castle_KS = true;
-
 
 	vector<vector<string>> Board;
-
 	unordered_map<string, int>coords; //handles matrix column coordinate conversion, letter -> number
-
 	stack<Move>Undo;
 
-
-	void init() {
+	void init() { //Creates an empty 8x8 board
 
 		string space = " ";
 		string letter_coords = "abcdefgh";
@@ -134,7 +123,7 @@ public:
 		}
 	}
 
-	int convert_to_matrix_col(string board_row) { //handles coordinate conversion with numbers(rows)
+	int convert_to_matrix_row(string board_row) { //handles coordinate conversion with numbers(rows)
 		if (move_count % 2 == 0) {
 			return (8 - stoi(board_row)) * 2 + 1;
 		}
@@ -146,8 +135,8 @@ public:
 	Move create_move(string initial_pos, string final_pos) {
 		int row_i, col_i, row_f, col_f;
 
-		row_i = convert_to_matrix_col(initial_pos.substr(1, 1));
-		row_f = convert_to_matrix_col(final_pos.substr(1, 1));
+		row_i = convert_to_matrix_row(initial_pos.substr(1, 1));
+		row_f = convert_to_matrix_row(final_pos.substr(1, 1));
 		if (move_count % 2 == 0) {
 			col_f = coords[final_pos.substr(0, 1)];
 			col_i = coords[initial_pos.substr(0, 1)];
@@ -157,29 +146,36 @@ public:
 			col_i = 16 - (coords[initial_pos.substr(0, 1)]);
 		}
 
-		//update undo data stack
-		Move newUndo;
-		newUndo.set_values(row_i, col_i, row_f, col_f, Board[row_f][col_f]);
-		return newUndo;
+		//update move data stack
+		Move newMove;
+		newMove.set_values(row_i, col_i, row_f, col_f, Board[row_f][col_f]);
+		return newMove;
 	}
+
 	void move_piece(string initial_pos, string final_pos) {
 
 		Move move = create_move(initial_pos, final_pos);
-		Undo.push(move);
-		//if a piece wasn't taken, increment 50 move draw count
-		if (Board[move.curr_row][move.curr_col] == "   ") {
-			draw_move_count++;
+		if (can_move_here(move.curr_row, move.curr_col, move.prev_row, move.prev_col)) {
+
+			Undo.push(move);
+			//if a piece wasn't taken, increment 50 move draw count
+			if (Board[move.curr_row][move.curr_col] == "   ") {
+				draw_move_count++;
+			}
+			else {
+				draw_move_count = 0;
+			}
+
+			//move the target piece
+			Board[move.curr_row][move.curr_col] = Board[move.prev_row][move.prev_col];
+			Board[move.prev_row][move.prev_col] = "   ";
+
+			flip_board();
+			move_count++;
 		}
 		else {
-			draw_move_count = 0;
+			cout << endl << "Error: piece cannot move here" << endl;
 		}
-
-		//move the target piece
-		Board[move.curr_row][move.curr_col] = Board[move.prev_row][move.prev_col];
-		Board[move.prev_row][move.prev_col] = "   ";
-
-		flip_board();
-		move_count++;
 
 	}
 
@@ -189,23 +185,186 @@ public:
 		Undo.pop();
 		move_count--;
 	}
+	
+	bool piece_is_wrong_color(string piece) {
 
+		string white_pieces = "PRNBQK";
+		string black_pieces = "prnbqk";
+
+		if (move_count % 2 == 0) {
+			for (unsigned int i = 0; i < black_pieces.length(); i++) {
+				if (piece == black_pieces.substr(i, 1)) {
+					return true;
+				}
+			}
+		}
+		else {
+			for (unsigned int i = 0; i < white_pieces.length(); i++) {
+				if (piece == white_pieces.substr(i, 1)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool target_is_wrong_color(string target) {
+		string white_pieces = "PRNBQK";
+		string black_pieces = "prnbqk";
+
+		if (move_count % 2 == 0) {
+			for (unsigned int i = 0; i < white_pieces.length(); i++) {
+				if (target == " " + white_pieces.substr(i, 1) + " ") {
+					return true;
+				}
+			}
+		}
+		else {
+			for (unsigned int i = 0; i < black_pieces.length(); i++) {
+				if (target == " " + black_pieces.substr(i, 1) + " ") {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	double distance(int x1, int y1, int x2, int y2) {
+		return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+	}
+	bool piece_in_the_way(int row_f, int col_f, int row_i, int col_i) {
+		if (col_f == col_i && row_f > row_i) { //Piece travels N
+			row_i += 2;
+			while (row_i != row_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i += 2;
+			}
+			
+		}
+		if (col_f == col_i && row_f < row_i) { //Piece travels S
+			row_i -= 2;
+			while (row_i != row_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i -= 2;
+			}
+
+		}
+		if (row_f == row_i && col_f > col_i) { //Piece travels E
+			col_i += 2;
+			while (col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i += 2;
+			}
+		} 
+		if (row_f == row_i && col_f < col_i) { //Piece travels W
+			col_i -= 2;
+			while (col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i -= 2;
+			}
+		}
+
+		if (col_f > col_i && row_f > row_i) { //Piece travels NE
+			row_i += 2;
+			col_i += 2;
+			while (row_i != row_f && col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i += 2;
+				col_i += 2;
+
+			}
+
+		}
+		if (col_f > col_i && row_f < row_i) { //Piece travels NE
+			row_i -= 2;
+			col_i += 2;
+			while (row_i != row_f && col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i -= 2;
+				col_i += 2;
+
+			}
+
+		}
+		if (col_f < col_i && row_f < row_i) { //Piece travels NE
+			row_i -= 2;
+			col_i -= 2;
+			while (row_i != row_f && col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i -= 2;
+				col_i -= 2;
+
+			}
+
+		}
+		if (col_f < col_i && row_f > row_i) { //Piece travels NE
+			row_i += 2;
+			col_i -= 2;
+			while (row_i != row_f && col_i != col_f) {
+				if (Board[row_i][col_f] != "   ") {
+					return true;
+				}
+				row_i += 2;
+				col_i -= 2;
+
+			}
+
+		}
+		return false;
+	}
 	bool can_move_here(int row_f, int col_f, int row_i, int col_i) {
-		/*	cout << row_i<< col_i<< row_f<< col_f;
+		
 		string piece = Board[row_i][col_i];
 		string target = Board[row_f][col_f];
-		cout << piece << Board[row_f][col_f];
-		if(piece == " P " || piece == " p "){
-		if((row_f == row_i - 2 && target == "   " )|| (target != "   " && (row_f == row_i-2) && (col_f == col_i+2)) ||( target != "   " && (row_f == row_i-2) && col_f == col_i-2)){
-		return true;
+		//cout << row_i << col_i << endl << row_f << col_f;
+		if (piece_is_wrong_color(piece)) {
+			return false;
 		}
-		if((piece == " P " && row_i == 13 && row_f == 9) || (piece == " p " && row_i == 14 && row_f == 10)){
-
-		return true;
-
+		if (piece == "   "){
+			return false;
 		}
+		if (target_is_wrong_color(target)) {
+			return false;
 		}
-		return false;*/
+		if (row_f == row_i && col_i == col_f) {
+			return false;
+		}
+		if (piece_in_the_way(row_f, col_f, row_i, col_i) && piece != " N " && piece != " n ") {
+			return false;
+		}
+		if (piece == " P " || piece == " p ") { //pawn move check
+			if (row_i == 13) {
+				if (row_f == row_i - 4 && Board[row_f][col_f] == "   " || (row_f == row_i - 2 && col_i == col_f && Board[row_f][col_f] == "   ") || (row_f == row_i - 2 && (col_f == col_i + 2 || col_f == col_i - 2) && Board[row_f][col_f] != "   "))
+					return true;
+			}
+			else if ((row_f == row_i - 2 && col_i == col_f && Board[row_f][col_f] == "   ") || (row_f == row_i - 2 && (col_f == col_i + 2 || col_f == col_i - 2) && Board[row_f][col_f] != "   ")) {
+				return true;
+			}
+			return false;
+		}
+		if (piece == " N " || piece == " n ") {//knight move check
+			double d = 4.47213595499958;
+				return abs(distance(row_f, col_f, row_i, col_i) - d) < .001;
+		}
+		if (piece == " K " || piece == " k ") {
+			double d1 = 2.0;
+			double d2 = 2.8284271;
+			return abs(distance(row_f, col_f, row_i, col_i) - d1) < .001 || abs(distance(row_f, col_f, row_i, col_i) - d2) < .001;
+		}
 		return true;
 	}
 
