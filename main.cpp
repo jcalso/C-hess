@@ -25,11 +25,11 @@ SOFTWARE.*/
 #include <unordered_map>
 #include <utility>
 #include <functional>
+#include <cctype>
 #include <stack>
 #include "Board.h"
+
 using namespace std;
-
-
 
 void print_start_message() {
 
@@ -90,7 +90,7 @@ int main() {
 	b.init();
 	b.insert_pieces();
 
-	while (b.draw_move_count != 50) {
+	while (b.white_king_alive && b.black_king_alive) {
 
 		b.print();
 
@@ -104,6 +104,7 @@ int main() {
 		cout << "Move piece at: ";
 		string initial_pos, final_pos;
 		cin >> initial_pos;
+
 		if (initial_pos == "undo") {
 			if (b.move_count == 0 && b.Undo.empty()) {
 				cout << endl << "Error: cannot undo any further";
@@ -116,31 +117,52 @@ int main() {
 		}
 		else if (initial_pos == "resign") {
 			if (b.move_count % 2 == 0) {
-				cout << "White has resigned, Black wins";
+				cout << "White has resigned, Black wins!";
 			}
 			else {
-				cout << "Black has resigned, White wins";
+				cout << "Black has resigned, White wins!";
 
 			}
-			exit(0);
+			break;
 		}
 		else {
-
+			
 			cout << "to: ";
 			cin >> final_pos;
+
+			if (isdigit(initial_pos[0])) {
+				
+				reverse(initial_pos.begin(), initial_pos.end());
+			}
+			if (isdigit(final_pos[0])) {
+
+				reverse(final_pos.begin(), final_pos.end());
+			
+			}
 			if (pos_is_valid(initial_pos) && pos_is_valid(final_pos)) {
+
 				b.move_piece(initial_pos, final_pos);
+
 			}
 			else {
 				cout << endl << "Error: invalid coordinate." << endl;
 			}
 		}
+	}
+	if (!b.white_king_alive) {
+		b.print();
+		cout << "White king captured, Black Wins!";
+	}
+	if (!b.black_king_alive) {
+		b.print();
 
-
+		cout << "Black king captured, White Wins!";
 	}
 	if (b.draw_move_count == 50) {
+		b.print();
 		cout << "The game has ended in a draw: 50 moves without a piece taken";
 	}
+
+
 	return 0;
 }
-
