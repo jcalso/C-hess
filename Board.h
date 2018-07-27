@@ -73,16 +73,11 @@ public:
 
 	void insert_pieces() {
 
-		for (unsigned int i = 0; i < Board.size() - 1; i++) {
-			for (unsigned int j = 0; j < Board.size() - 1; j++) {
 
-				if (i == 3 && j % 2 == 1) { //insert black pawns
-					Board[i][j] = " p ";
-				}
-				else if (i == 13 && j % 2 == 1) { //insert white pawns
-					Board[i][j] = " P ";
-				}
-
+		for (unsigned int j = 0; j < Board.size() - 1; j++) {
+			if (j % 2 == 1) { 
+				Board[3][j] = " p "; //insert black pawns
+				Board[13][j] = " P "; //insert white pawns
 			}
 		}
 
