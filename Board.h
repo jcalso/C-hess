@@ -108,16 +108,12 @@ public:
 	void flip_board() {
 		for (unsigned int i = 0; i < Board.size() / 2; i++) {
 			for (unsigned int j = 0; j < Board.size(); j++) {
-				if (i != 17) {
-					swap(Board[i][j], Board[Board.size() - 2 - i][j]);
-				}
+				swap(Board[i][j], Board[Board.size() - 2 - i][j]);
 			}
 		}
 		for (unsigned int i = 0; i < Board.size(); i++) {
 			for (unsigned int j = 0; j < Board.size() / 2; j++) {
-				if (j != 17) {
 					swap(Board[i][j], Board[i][Board.size() - 2 - j]);
-				}
 			}
 		}
 	}
@@ -196,45 +192,35 @@ public:
 	}
 
 
-	
-	bool piece_is_wrong_color(string piece) {
-
-		string white_pieces = "PRNBQK";
-		string black_pieces = "prnbqk";
-
-		if (move_count % 2 == 0) {
-			for (unsigned int i = 0; i < black_pieces.length(); i++) {
-				if (piece == black_pieces.substr(i, 1)) {
-					return true;
-				}
-			}
+	//Checks if player moves opponent's piece
+	bool piece_is_wrong_color(string piece) { 
+		string opponent_pieces;
+		if(move_count %2 == 0){
+			opponent_pieces = "prnbqk";
 		}
-		else {
-			for (unsigned int i = 0; i < white_pieces.length(); i++) {
-				if (piece == white_pieces.substr(i, 1)) {
+		else{
+			opponent_pieces = "PRNBQK";
+		}
+		for (unsigned int i = 0; i < opponent_pieces.length(); i++) {
+			if (piece == " " + opponent_pieces.substr(i, 1) + " ") {
 					return true;
-				}
 			}
 		}
 		return false;
 	}
-
+	
+	// Checks if player accidentally takes their own piece
 	bool target_is_wrong_color(string target) {
-		string white_pieces = "PRNBQK";
-		string black_pieces = "prnbqk";
-
-		if (move_count % 2 == 0) {
-			for (unsigned int i = 0; i < white_pieces.length(); i++) {
-				if (target == " " + white_pieces.substr(i, 1) + " ") {
-					return true;
-				}
-			}
+		string player_pieces;
+		if(move_count % 2 == 0){ //if white's turn
+			player_pieces = "PRNBQK";
 		}
-		else {
-			for (unsigned int i = 0; i < black_pieces.length(); i++) {
-				if (target == " " + black_pieces.substr(i, 1) + " ") {
+		else{
+			player_pieces = "prnbqk";
+		}
+		for (unsigned int i = 0; i < player_pieces.length(); i++) {
+			if (target == " " + player_pieces.substr(i, 1) + " ") {
 					return true;
-				}
 			}
 		}
 		return false;
